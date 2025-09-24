@@ -6,14 +6,19 @@
 * @description: The structure of CATCH
 '''
 
+
+# RevIN: 可逆实例归一化层，用于时间序列的归一化和反归一化
+# Trans_C: 跨通道Transformer，核心的注意力机制组件
+# channel_mask_generator: 通道掩码生成器，用于动态选择重要的通道特征
 from ts_benchmark.baselines.catch.layers.RevIN import RevIN
 from ts_benchmark.baselines.catch.layers.cross_channel_Transformer import Trans_C
+from ts_benchmark.baselines.catch.layers.channel_mask import channel_mask_generator
+
+
 # Cell
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from ts_benchmark.baselines.catch.layers.channel_mask import channel_mask_generator
 
 
 class CATCHModel(nn.Module):
@@ -21,11 +26,16 @@ class CATCHModel(nn.Module):
                  **kwargs):
         super(CATCHModel, self).__init__()
 
+        # 创建可逆实例归一化层，c_in是输入通道数 affine=True表示使用可学习的仿射参数 subtract_last决定是否使用最后一个值进行归一化
         self.revin_layer = RevIN(configs.c_in, affine=configs.affine, subtract_last=configs.subtract_last)
         # Patching
+        # 分片大小
         self.patch_size = configs.patch_size
+        # 分片步长
         self.patch_stride = configs.patch_stride
+        # 序列长度
         self.seq_len = configs.seq_len
+        # 探测事业
         self.horizon = self.seq_len
         patch_num = int((configs.seq_len - configs.patch_size) / configs.patch_stride + 1)
         self.norm = nn.LayerNorm(self.patch_size)
